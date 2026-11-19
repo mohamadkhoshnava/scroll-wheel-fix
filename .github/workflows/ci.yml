@@ -1,0 +1,37 @@
+name: macOS build and tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test direction filtering without Accessibility access
+        run: ./scripts/test.sh
+      - name: Build and validate app bundle
+        run: ./scripts/build.sh
+      - name: Package app
+        run: ditto -c -k --sequesterRsrc --keepParent "dist/M220 Scroll Fix.app" dist/M220-Scroll-Fix.zip
+      - name: Upload build artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: M220-Scroll-Fix-macOS
+          path: dist/M220-Scroll-Fix.zip
+          if-no-files-found: error
+          retention-days: 14
