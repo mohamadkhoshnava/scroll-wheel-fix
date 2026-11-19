@@ -1,0 +1,43 @@
+name: Scroll problem or mouse compatibility
+description: Report scroll wheel jumping, reverse scrolling, or a tested mouse/OS combination.
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Windows
+        - Linux (Wayland)
+        - Linux (X11)
+        - Linux (other / unknown)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OS and Scroll Wheel Fix versions
+    validations:
+      required: true
+  - type: input
+    id: mouse
+    attributes:
+      label: Mouse model and connection (USB / receiver / Bluetooth)
+      description: Do not include a serial number.
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Filter mode
+      options:
+        - Balanced
+        - Strong
+        - Paused / stopped
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happens with the filter active versus paused/stopped?
+      description: Include affected applications, steps, and any other scroll/remapping utilities. No credentials or private input logs.
+    validations:
+      required: true

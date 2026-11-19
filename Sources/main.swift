@@ -21,8 +21,8 @@ final class ScrollFix: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.title = "M220 ○"
-        item.button?.toolTip = "M220 Scroll Fix — filter wheel direction glitches"
+        item.button?.title = "SWF ○"
+        item.button?.toolTip = "Scroll Wheel Fix — filter wheel direction glitches"
         refreshMenu()
         connectIfAllowed()
         if tap == nil { showHelp(nil) }
@@ -31,6 +31,10 @@ final class ScrollFix: NSObject, NSApplicationDelegate {
         }
     }
     func applicationWillTerminate(_ notification: Notification) { disconnect() }
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showHelp(nil)
+        return true
+    }
     func discardPending() { dropped += pending.count; pending.removeAll() }
     func disconnect() {
         if let tap { CGEvent.tapEnable(tap: tap, enable: false); CFMachPortInvalidate(tap) }
@@ -105,7 +109,7 @@ final class ScrollFix: NSObject, NSApplicationDelegate {
     }
     func refreshMenu() {
         let active = enabled && tap != nil && AXIsProcessTrusted()
-        item.button?.title = active ? "M220 ✓" : "M220 ○"
+        item.button?.title = active ? "SWF ✓" : "SWF ○"
         let menu = NSMenu()
         menu.addItem(menuItem(statusText))
         menu.addItem(menuItem("Wheel: \(wheelSeen) · suppressed: \(dropped)"))
@@ -118,9 +122,9 @@ final class ScrollFix: NSObject, NSApplicationDelegate {
         strong.state = gate.window == 0.140 ? .on : .off; menu.addItem(strong)
         menu.addItem(menuItem("Setup and help…", #selector(showHelp(_:))))
         menu.addItem(.separator())
-        let quit = menuItem("Quit M220 Scroll Fix", #selector(quitApp)); quit.keyEquivalent = "q"
+        let quit = menuItem("Quit Scroll Wheel Fix", #selector(quitApp)); quit.keyEquivalent = "q"
         menu.addItem(quit); item.menu = menu
-        info?.stringValue = active ? "فیلتر فعال است. حالا اسکرول ماوس را امتحان کن.\nبالای صفحه در منوی M220 می‌توانی فیلتر را متوقف کنی یا برنامه را ببندی." : "برای فعال شدن، مجوز Accessibility را فقط برای M220 Scroll Fix روشن کن.\nبرنامه هر دو ثانیه مجوز را بررسی می‌کند و پس از تأیید خودکار فعال می‌شود."
+        info?.stringValue = active ? "Filter active. Try scrolling with your mouse.\nUse the SWF menu to pause the filter or quit." : "Enable Accessibility for Scroll Wheel Fix in System Settings.\nThe app checks every two seconds and activates after permission is granted."
     }
     @objc func toggle() {
         enabled.toggle(); disconnect()
@@ -131,25 +135,27 @@ final class ScrollFix: NSObject, NSApplicationDelegate {
     @objc func strongMode() { discardPending(); gate.reset(); gate.window = 0.140; refreshMenu() }
     @objc func quitApp() { NSApp.terminate(nil) }
     @objc func openSettings() {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
     @objc func showHelp(_ sender: Any?) {
         if window == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 400),
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 430),
                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            w.title = "M220 Scroll Fix"; w.isReleasedWhenClosed = false; w.center()
-            let title = NSTextField(labelWithString: "فیلتر پرش چرخ ماوس M220")
+            w.title = "Scroll Wheel Fix"; w.isReleasedWhenClosed = false; w.center()
+            let title = NSTextField(labelWithString: "Scroll Wheel Fix")
             title.font = .boldSystemFont(ofSize: 23)
-            let detail = NSTextField(wrappingLabelWithString: "این برنامه پرش‌های کوتاه به جهت مخالف را فیلتر می‌کند؛ تعمیر سخت‌افزار نیست. تغییر عمدی جهت ممکن است حدود ۸۰ میلی‌ثانیه و تا رسیدن فرمان بعدی مکث داشته باشد. ورودی پیوستهٔ اسکرول معمولاً مربوط به ترک‌پد است و بدون تغییر عبور می‌کند. فیلتر روی چرخ‌های غیرپیوستهٔ ماوس‌های دیگر هم اثر دارد.\n\nفقط رخداد اسکرول دریافت می‌شود. متن کیبورد، کلیک‌ها یا محتوای صفحه خوانده و ذخیره نمی‌شوند؛ برنامه هیچ ارتباط شبکه‌ای ندارد.")
+            let detail = NSTextField(wrappingLabelWithString: "Filters brief wrong-direction mouse-wheel bursts across mouse brands. This is a workaround, not a hardware repair. A deliberate reversal can wait for a follow-up tick; a single quick reverse tick may be suppressed.\n\nOnly scroll events are requested. Continuous input (usually trackpads), horizontal scroll, and modifier-key scrolling pass through. There is no network client or input log.")
             detail.font = .systemFont(ofSize: 14)
             let label = NSTextField(wrappingLabelWithString: "")
             label.font = .systemFont(ofSize: 14); info = label
-            let button = NSButton(title: "باز کردن تنظیمات Accessibility", target: self, action: #selector(openSettings))
+            let button = NSButton(title: "Open Accessibility settings", target: self, action: #selector(openSettings))
             button.bezelStyle = .rounded
-            let close = NSButton(title: "خروج و توقف کامل فیلتر", target: self, action: #selector(quitApp))
+            let close = NSButton(title: "Quit and stop filtering", target: self, action: #selector(quitApp))
             close.bezelStyle = .rounded
             let stack = NSStackView(views: [title, detail, label, button, close])
-            stack.orientation = .vertical; stack.alignment = .trailing; stack.spacing = 18
+            stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 18
             stack.translatesAutoresizingMaskIntoConstraints = false
             w.contentView!.addSubview(stack)
             NSLayoutConstraint.activate([
@@ -158,7 +164,7 @@ final class ScrollFix: NSObject, NSApplicationDelegate {
                 stack.topAnchor.constraint(equalTo: w.contentView!.topAnchor, constant: 25),
                 stack.bottomAnchor.constraint(lessThanOrEqualTo: w.contentView!.bottomAnchor, constant: -20)
             ])
-            for field in [title, detail, label] { field.alignment = .right; field.baseWritingDirection = .rightToLeft }
+            for field in [title, detail, label] { field.alignment = .left; field.baseWritingDirection = .leftToRight }
             window = w
         }
         refreshMenu(); window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)

@@ -1,100 +1,105 @@
-# M220 Scroll Fix
+# Scroll Wheel Fix
 
-A small macOS menu bar app that filters brief wrong-direction mouse-wheel scroll bursts. It was built to make a Logitech M220 with jumpy scrolling more usable.
+**Fix mouse scroll wheel jumping, bouncing, jitter, and random reverse scrolling** with a small, local input filter for **macOS, Windows, and Linux**.
 
-[راهنمای فارسی](README.fa.md) · [MIT license](LICENSE)
+[![Build and tests](https://github.com/mohamadkhoshnava/scroll-wheel-fix/actions/workflows/ci.yml/badge.svg)](https://github.com/mohamadkhoshnava/scroll-wheel-fix/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-This is a software workaround, not a hardware repair. It can suppress a quick intentional reverse tick and delay deliberate direction changes. Try **Pause filter** when comparing behavior.
+[Download v0.2.0 preview](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/tag/v0.2.0) · [راهنمای فارسی](README.fa.md) · [Report a mouse compatibility result](https://github.com/mohamadkhoshnava/scroll-wheel-fix/issues/new/choose)
 
-## Features
+## Does your mouse wheel scroll in the wrong direction?
 
-- Passes same-direction wheel scrolling without an intentional delay.
-- Holds brief reverse bursts; discards them if the original direction resumes.
-- Replays buffered ticks when a sustained direction change is confirmed.
-- Offers **Balanced (80 ms)** and **Strong (140 ms)** modes.
-- Passes continuous/pixel input, horizontal scrolling, and modifier-key scrolling unchanged.
-- Provides pause, resume, counters, and quit controls in the menu bar.
-- Uses native Swift/AppKit and Core Graphics, with no third-party dependencies.
+You scroll down, but the page suddenly jumps up. Or you scroll up and it briefly goes down. Scroll Wheel Fix buffers short opposite-direction bursts and discards them when the intended direction resumes.
 
-## Requirements
+Originally called **M220 Scroll Fix**, this project began with a Logitech M220. It now has no mouse-brand or model allowlist: wired, USB-receiver, and Bluetooth mice can be candidates when they produce the supported wheel events. Support depends on the input format and OS backend, not the logo on the mouse. **This does not mean every mouse has been tested.**
 
-- macOS 13 or later.
-- Xcode Command Line Tools or Xcode with `swiftc` available through `xcrun`.
-- Accessibility permission for the installed app.
+This is a workaround for noisy wheel input, not a hardware repair. A quick intentional reverse tick can be suppressed; deliberate reversals can wait for a subsequent tick. It will not fix every cause of scrolling lag, page reflow, lost wireless packets, or a broken wheel.
 
-The build targets the current Mac's architecture: Apple Silicon or Intel. A build made on one architecture is not a universal binary. The minimum deployment target is macOS 13; runtime behavior has only been manually checked on one Mac with an M220.
+## Downloads and platform support
 
-## Build and install
+Get the platform archive and `SHA256SUMS.txt` from the [release page](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/tag/v0.2.0). The cross-platform version is a **preview**.
+
+| Platform | Download | Interface and access | Verification |
+| --- | --- | --- | --- |
+| macOS 13+ | `Scroll-Wheel-Fix-macOS-universal.zip` | Native menu bar app, Intel + Apple Silicon; Accessibility permission | Swift/C++ tests and universal build in CI; earlier M220 version manually used on one Mac |
+| Windows 10/11 x64 | `Scroll-Wheel-Fix-Windows-x64.zip` | Portable native tray app; ordinary interactive desktop session | Native build and C++ tests in CI; physical-mouse testing still needed |
+| Linux x64 | `Scroll-Wheel-Fix-Linux-x64.tar.gz` | CLI; selected evdev mouse + uinput, usually `sudo`; designed for Wayland and X11 | Build, CLI checks, wheel-frame and C++ tests in CI; physical-mouse/compositor testing still needed |
+
+The Linux binary is built on Ubuntu 24.04 and needs `libevdev.so.2` and a compatible C++/glibc runtime. Build from source for other distributions or architectures. Windows binaries are unsigned; macOS builds are ad hoc signed, not Developer ID signed or notarized. No account, subscription, or internet connection is required to run the tools.
+
+### macOS quick start
+
+1. Extract the ZIP, move **Scroll Wheel Fix.app** to Applications, and open it.
+2. Enable it in **System Settings → Privacy & Security → Accessibility**. Add the installed app with **+** if needed.
+3. **SWF ✓** in the menu bar means active. Use that menu to pause, select a mode, or quit.
+
+Quit older copies before running the new app. The original M220 utility uses a different bundle identity; the renamed app needs its own permission. See [macOS setup and source build](docs/macos.md).
+
+### Windows quick start
+
+1. Extract the ZIP and run **ScrollWheelFix.exe** in your normal user session.
+2. Right-click its icon in the notification area (possibly under the hidden-icons arrow).
+3. Choose **Pause filter**, **Balanced**, **Strong**, or **Quit**. Double-click the icon for help.
+
+No installer or driver is needed. Elevated applications and raw-input games can behave differently. See [Windows setup and source build](docs/windows.md).
+
+### Linux quick start
 
 ```bash
-git clone https://github.com/mohamadkhoshnava/m220-scroll-fix.git
-cd m220-scroll-fix
-./scripts/test.sh
-./scripts/build.sh
+# Ubuntu / Debian runtime dependency:
+sudo apt install libevdev2
+./scroll-wheel-fix --help
+sudo ./scroll-wheel-fix --list
+# Replace eventN with the mouse-only device identified above:
+sudo ./scroll-wheel-fix --device /dev/input/eventN --mode balanced
 ```
 
-The app is created at `dist/M220 Scroll Fix.app`. Move it to your Applications folder using Finder, then open it. Quit any older copy before replacing it. The build script only writes inside this checkout; it does not replace an installed app or grant permissions.
+The process temporarily grabs **only the selected mouse**, creates a virtual mouse, and forwards movement/buttons while filtering wheel frames. It releases the device on exit. **Ctrl+C** stops it. It does not grab the keyboard or install a privileged service. Read [Linux setup, uinput permissions, and recovery](docs/linux.md) before using this backend.
 
-The app is ad hoc signed for local use. It is not Apple Developer ID signed or notarized. Building from source is the intended installation method.
+## How the scroll bounce filter works
 
-## Enable the filter
+- Same-direction wheel input passes without an intentional delay.
+- Opposite input is held. Returning to the original direction discards that burst.
+- At least two reverse events spanning **80 ms (Balanced)** or **140 ms (Strong)** confirm an intentional reversal; held events are replayed in order.
+- After more than **600 ms** without an accepted tick, direction resets and the next tick passes immediately.
 
-1. Open **M220 Scroll Fix**.
-2. Open **System Settings → Privacy & Security → Accessibility** using the button in its setup window.
-3. Add the installed app with **+** if it is missing, then enable its switch. macOS may ask you to authenticate.
-4. Wait a few seconds. **M220 ✓** in the menu bar means the filter is active. **M220 ○** means it is paused or waiting for permission.
+The window is a confirmation threshold, not a timer that releases a lone event. A single quick reverse tick may disappear. Noise after an idle gap or a long faulty burst may still pass. Start with Balanced and compare with the filter paused/stopped.
 
-If permission is enabled but the app cannot attach its filter, quit and reopen it. Moving or rebuilding an ad hoc signed app may require adding it again in Accessibility.
-
-The app does not install a login item. Open it again after logging in, or add it yourself through macOS Login Items if you want automatic startup.
-
-## Controls
-
-| Menu item | Behavior |
+| Backend | Scope and bypasses |
 | --- | --- |
-| Pause filter / Enable filter | Toggle the workaround without changing macOS mouse settings. |
-| Balanced — 80 ms | Default direction-confirmation window. |
-| Strong — 140 ms | Longer confirmation window; may suppress more noise but feel less responsive. |
-| Wheel / suppressed counters | In-memory counts of eligible wheel events and discarded buffered events. |
-| Continuous input passed through | Count of continuous scroll events that bypass the filter. |
-| Setup and help | Reopen the setup window; its explanatory text is currently Persian. |
-| Quit M220 Scroll Fix | Remove the event tap and stop filtering completely. |
+| macOS | All noncontinuous vertical wheel input; continuous/pixel input, horizontal and modifier-key scroll bypass |
+| Windows | All standard vertical wheel input in the session; injected, fractional, and modifier-key scroll bypass; device model is unavailable to this hook |
+| Linux | One explicitly selected relative mouse; low/high-resolution vertical wheel fields share one decision per frame; horizontal frames bypass; keyboard modifiers are not monitored, so modified wheel gestures are still filtered |
 
-Mode and pause state reset when the app restarts. Counters reset too. Held events that never receive a follow-up remain buffered until a later event or reset, so the suppressed counter can lag behind actual input.
+Touchpads, absolute devices, composite keyboard nodes, unusual gaming drivers, and smooth-scroll converters are not universally supported. [Compatibility and known limits](docs/compatibility.md) explains the boundaries. Please report actual mouse/OS results rather than assuming support from a brand name.
 
-## How it works
+## Automatic builds and releases
 
-The filter remembers the last accepted vertical wheel direction. An opposite event is buffered. If the original direction returns, the reverse burst is discarded. If at least two opposite events span the confirmation window, the app accepts the new direction and replays its buffered ticks. After more than 600 ms without an accepted tick, it resets direction and lets the next tick through immediately.
+[GitHub Actions](https://github.com/mohamadkhoshnava/scroll-wheel-fix/actions/workflows/ci.yml) builds and tests all three platforms on pushes to `main`, pull requests, and manual runs. Each successful job uploads a downloadable platform archive. These workflow artifacts expire after 14 days and may require GitHub sign-in.
 
-The confirmation window is a threshold, not a timer that releases events automatically. Deliberate reversals wait for a subsequent tick; a single quick reverse tick can be discarded. A bad tick after an idle gap, or a sustained faulty burst, may still get through.
+Pushing a `v*` tag runs the same checks and automatically creates a **preview release** with all three archives and SHA-256 checksums only after every platform succeeds. Release assets are the public download path. See [contribution and release instructions](CONTRIBUTING.md).
 
-## Scope and privacy
+## Build from source
 
-The app requests a Core Graphics event tap for **scroll-wheel events only**. Its code does not subscribe to keyboard input, clicks, pointer movement, or screen contents. It has no network client, telemetry, account, event log, or stored scroll history; counters remain in memory. Accessibility is still a broad macOS permission, which you grant yourself in System Settings.
-
-Quartz scroll events do not identify the mouse model. The filter therefore affects **all noncontinuous vertical wheel input**, not just an M220. Continuous/pixel input—normally trackpads or smooth-scroll software—is passed through. The continuous flag describes the event format, so it is not a guaranteed device identity check. Other utilities that convert wheel input to continuous input may bypass this filter.
-
-Initial hands-on use with one M220 indicated improvement. There is no measured live success rate, no broad compatibility claim, and no guarantee that every jump can be removed. Synthetic regression tests cover the direction gate; manual testing is still needed for real hardware and macOS permissions.
-
-## Development
-
-```text
-Sources/DirectionGate.swift  Direction-confirmation state machine
-Sources/main.swift           Menu bar app and scroll event tap
-Tests/main.swift             Synthetic regression checks
-Resources/Info.plist         App bundle metadata
-scripts/test.sh             Run tests without Accessibility permission
-scripts/build.sh            Build and ad hoc sign the app bundle
+```bash
+git clone https://github.com/mohamadkhoshnava/scroll-wheel-fix.git
+cd scroll-wheel-fix
 ```
 
-GitHub Actions runs the tests and build on macOS and uploads a ZIP of that runner's app bundle as a workflow artifact. Artifacts are not notarized releases.
+- **macOS:** `./scripts/test.sh`, then `ARCHS=universal ./scripts/build.sh` (requires Xcode Command Line Tools or Xcode).
+- **Windows:** CMake + Visual Studio C++ tools; [build instructions](docs/windows.md#build-from-source).
+- **Linux:** CMake + C++17 + libevdev development headers; [build instructions](docs/linux.md#build-from-source).
 
-When reporting an issue, include your macOS version, mouse model, selected mode, whether another scroll utility is running, and whether the problem remains with this filter paused. Please do not include credentials or unrelated personal data.
+The native C++ filter and Linux frame tests run without input-device access. CI does not install an input hook or grab physical hardware. Passing CI proves compilation and regression checks, not end-to-end behavior on every desktop.
 
-## Uninstall
+## Privacy, stopping, and removal
 
-Quit from the **M220** menu, remove the app's Accessibility permission, and move the app to Trash. There is no background service or login item installed by this project.
+No backend has a network client, telemetry, stored input history, or automatic startup entry. Counters live in memory. The macOS tap requests only scroll events. The Windows mouse hook immediately passes non-wheel events and installs no keyboard hook; it checks modifier state. Linux reads and forwards events only from the selected mouse and rejects nodes advertising keyboard keys.
 
-## License
+Accessibility and Linux device permissions are powerful; grant them yourself for the intended executable. Quit from the macOS/Windows menu or press Ctrl+C on Linux to stop. Remove the executable/app and any permission you granted to uninstall. No system mouse settings are rewritten.
 
-[MIT](LICENSE), copyright © 2026 Mohammad Khoshnava. This is an independent utility, not an official Logitech product.
+## Troubleshooting and contributions
+
+See [scroll wheel jumping / reverse scrolling FAQ](docs/troubleshooting.md), [compatibility](docs/compatibility.md), and [CONTRIBUTING.md](CONTRIBUTING.md). Reports should include OS, mouse model, connection, mode, and behavior with the filter stopped. Avoid credentials, serial numbers, and unrelated personal data.
+
+[MIT license](LICENSE) · Copyright © 2026 Mohammad Khoshnava. Independent software; not an official Logitech or other mouse-vendor product.

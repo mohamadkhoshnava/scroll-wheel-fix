@@ -1,8 +1,9 @@
-name: macOS build and tests
+name: Build, test and release
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -10,28 +11,136 @@ permissions:
   contents: read
 
 concurrency:
-  group: macos-${{ github.workflow }}-${{ github.ref }}
+  group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  macos:
+    name: macOS universal
     runs-on: macos-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Test direction filtering without Accessibility access
-        run: ./scripts/test.sh
-      - name: Build and validate app bundle
-        run: ./scripts/build.sh
-      - name: Package app
-        run: ditto -c -k --sequesterRsrc --keepParent "dist/M220 Scroll Fix.app" dist/M220-Scroll-Fix.zip
+      - name: Test Swift and C++ direction filters
+        run: |
+          ./scripts/test.sh
+          cmake -S . -B .build/native -DCMAKE_BUILD_TYPE=Release
+          cmake --build .build/native --config Release
+          ctest --test-dir .build/native --output-on-failure
+      - name: Build and validate Intel + Apple Silicon app
+        env:
+          ARCHS: universal
+        run: |
+          ./scripts/build.sh
+          archs="$(lipo -archs "dist/Scroll Wheel Fix.app/Contents/MacOS/ScrollWheelFix")"
+          [[ " $archs " == *" arm64 "* ]]
+          [[ " $archs " == *" x86_64 "* ]]
+      - name: Package app with documentation
+        run: |
+          mkdir -p dist/package-macos
+          cp -R "dist/Scroll Wheel Fix.app" dist/package-macos/
+          cp README.md README.fa.md LICENSE docs/macos.md dist/package-macos/
+          ditto -c -k --sequesterRsrc dist/package-macos dist/Scroll-Wheel-Fix-macOS-universal.zip
       - name: Upload build artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: M220-Scroll-Fix-macOS
-          path: dist/M220-Scroll-Fix.zip
+          name: Scroll-Wheel-Fix-macOS-universal
+          path: dist/Scroll-Wheel-Fix-macOS-universal.zip
           if-no-files-found: error
           retention-days: 14
+
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build native tray app and test filter
+        run: |
+          cmake -S . -B .build/native -A x64
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --build .build/native --config Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ctest --test-dir .build/native -C Release --output-on-failure
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Package portable app
+        run: |
+          New-Item -ItemType Directory -Force dist/package-windows | Out-Null
+          Copy-Item .build/native/Release/ScrollWheelFix.exe dist/package-windows/
+          Copy-Item README.md,README.fa.md,LICENSE,docs/windows.md dist/package-windows/
+          Compress-Archive -Path dist/package-windows/* -DestinationPath dist/Scroll-Wheel-Fix-Windows-x64.zip
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Scroll-Wheel-Fix-Windows-x64
+          path: dist/Scroll-Wheel-Fix-Windows-x64.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  linux:
+    name: Linux x64 (evdev + uinput)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install build dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libevdev-dev pkg-config
+      - name: Build and test without input-device access
+        run: |
+          cmake -S . -B .build/native -DCMAKE_BUILD_TYPE=Release
+          cmake --build .build/native --config Release
+          ctest --test-dir .build/native --output-on-failure
+          .build/native/scroll-wheel-fix --help
+          test "$(.build/native/scroll-wheel-fix --version)" = "0.2.0"
+          if .build/native/scroll-wheel-fix --mode invalid; then exit 1; fi
+          if .build/native/scroll-wheel-fix --device /nonexistent-swf-test-device; then exit 1; fi
+      - name: Package CLI app
+        run: |
+          mkdir -p dist/package-linux
+          cp .build/native/scroll-wheel-fix README.md README.fa.md LICENSE docs/linux.md dist/package-linux/
+          tar -czf dist/Scroll-Wheel-Fix-Linux-x64.tar.gz -C dist/package-linux .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Scroll-Wheel-Fix-Linux-x64
+          path: dist/Scroll-Wheel-Fix-Linux-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish tagged preview
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [macos, windows, linux]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download all platform archives
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: Scroll-Wheel-Fix-*
+          path: release
+          merge-multiple: true
+      - name: Create checksums and publish preview release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          (cd release && sha256sum *.zip *.tar.gz > SHA256SUMS.txt)
+          args=(--verify-tag --title "Scroll Wheel Fix ${GITHUB_REF_NAME}" --prerelease)
+          if [[ -f "docs/releases/${GITHUB_REF_NAME}.md" ]]; then
+            args+=(--notes-file "docs/releases/${GITHUB_REF_NAME}.md")
+          else
+            args+=(--generate-notes)
+          fi
+          gh release create "$GITHUB_REF_NAME" release/* "${args[@]}"
