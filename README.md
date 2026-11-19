@@ -1,5 +1,9 @@
 # Scroll Wheel Fix
 
+[![Scroll Wheel Fix — a mouse with a jumpy scroll trace becoming smooth](assets/scroll-wheel-fix-banner.png)](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/latest)
+
+**[Download the latest release — macOS, Windows and Linux](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/latest)**
+
 **Fix mouse scroll wheel jumping, bouncing, jitter, and random reverse scrolling** with a small, local input filter for **macOS, Windows, and Linux**.
 
 [![Build and tests](https://github.com/mohamadkhoshnava/scroll-wheel-fix/actions/workflows/ci.yml/badge.svg)](https://github.com/mohamadkhoshnava/scroll-wheel-fix/actions/workflows/ci.yml)
@@ -21,9 +25,9 @@ Get the platform archive and `SHA256SUMS.txt` from the [release page](https://gi
 
 | Platform | Download | Interface and access | Verification |
 | --- | --- | --- | --- |
-| macOS 13+ | `Scroll-Wheel-Fix-macOS-universal.zip` | Native menu bar app, Intel + Apple Silicon; Accessibility permission | Swift/C++ tests and universal build in CI; earlier M220 version manually used on one Mac |
-| Windows 10/11 x64 | `Scroll-Wheel-Fix-Windows-x64.zip` | Portable native tray app; ordinary interactive desktop session | Native build and C++ tests in CI; physical-mouse testing still needed |
-| Linux x64 | `Scroll-Wheel-Fix-Linux-x64.tar.gz` | CLI; selected evdev mouse + uinput, usually `sudo`; designed for Wayland and X11 | Build, CLI checks, wheel-frame and C++ tests in CI; physical-mouse/compositor testing still needed |
+| macOS 13+ | [Scroll-Wheel-Fix-macOS-universal.zip](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/download/v0.2.0/Scroll-Wheel-Fix-macOS-universal.zip) | Native menu bar app, Intel + Apple Silicon; Accessibility permission | Swift/C++ tests and universal build in CI; earlier M220 version manually used on one Mac |
+| Windows 10/11 x64 | [Scroll-Wheel-Fix-Windows-x64.zip](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/download/v0.2.0/Scroll-Wheel-Fix-Windows-x64.zip) | Portable native tray app; ordinary interactive desktop session | Native build and C++ tests in CI; physical-mouse testing still needed |
+| Linux x64 | [Scroll-Wheel-Fix-Linux-x64.tar.gz](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/download/v0.2.0/Scroll-Wheel-Fix-Linux-x64.tar.gz) | CLI; selected evdev mouse + uinput, usually `sudo`; designed for Wayland and X11 | Build, CLI checks, wheel-frame and C++ tests in CI; physical-mouse/compositor testing still needed |
 
 The Linux binary is built on Ubuntu 24.04 and needs `libevdev.so.2` and a compatible C++/glibc runtime. Build from source for other distributions or architectures. Windows binaries are unsigned; macOS builds are ad hoc signed, not Developer ID signed or notarized. No account, subscription, or internet connection is required to run the tools.
 

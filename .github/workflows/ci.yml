@@ -42,6 +42,7 @@ jobs:
         run: |
           mkdir -p dist/package-macos
           cp -R "dist/Scroll Wheel Fix.app" dist/package-macos/
+          cp -R assets dist/package-macos/
           cp README.md README.fa.md LICENSE docs/macos.md dist/package-macos/
           ditto -c -k --sequesterRsrc dist/package-macos dist/Scroll-Wheel-Fix-macOS-universal.zip
       - name: Upload build artifact
@@ -72,6 +73,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist/package-windows | Out-Null
           Copy-Item .build/native/Release/ScrollWheelFix.exe dist/package-windows/
+          Copy-Item -Recurse assets dist/package-windows/
           Copy-Item README.md,README.fa.md,LICENSE,docs/windows.md dist/package-windows/
           Compress-Archive -Path dist/package-windows/* -DestinationPath dist/Scroll-Wheel-Fix-Windows-x64.zip
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -106,6 +108,7 @@ jobs:
         run: |
           mkdir -p dist/package-linux
           cp .build/native/scroll-wheel-fix README.md README.fa.md LICENSE docs/linux.md dist/package-linux/
+          cp -R assets dist/package-linux/
           tar -czf dist/Scroll-Wheel-Fix-Linux-x64.tar.gz -C dist/package-linux .
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -115,7 +118,7 @@ jobs:
           retention-days: 14
 
   release:
-    name: Publish tagged preview
+    name: Publish tagged release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [macos, windows, linux]
     runs-on: ubuntu-24.04
@@ -137,7 +140,7 @@ jobs:
         shell: bash
         run: |
           (cd release && sha256sum *.zip *.tar.gz > SHA256SUMS.txt)
-          args=(--verify-tag --title "Scroll Wheel Fix ${GITHUB_REF_NAME}" --prerelease)
+          args=(--verify-tag --title "Scroll Wheel Fix ${GITHUB_REF_NAME}" --latest)
           if [[ -f "docs/releases/${GITHUB_REF_NAME}.md" ]]; then
             args+=(--notes-file "docs/releases/${GITHUB_REF_NAME}.md")
           else

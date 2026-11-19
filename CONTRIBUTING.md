@@ -17,8 +17,8 @@ Run the [platform build instructions](README.md#build-from-source). CMake/CTest 
 
 ## CI and publishing
 
-Pushes to main, pull requests, and manual dispatch build macOS universal, Windows x64, and Linux x64 artifacts. A `v*` tag publishes a preview release only after all platform jobs pass. Actions are pinned to upstream commit SHAs. Only the release job has repository-content write permission.
+Pushes to main, pull requests, and manual dispatch build macOS universal, Windows x64, and Linux x64 artifacts. A `v*` tag publishes a downloadable release marked Latest only after all platform jobs pass. Backend maturity and preview limitations must remain explicit in its notes. Actions are pinned to upstream commit SHAs. Only the release job has repository-content write permission.
 
-Before tagging, update the version in `CMakeLists.txt`, `native/common/filter.hpp`, `Resources/Info.plist`, and the CLI version check in `.github/workflows/ci.yml`. Add `docs/releases/vX.Y.Z.md` with accurate notes, download requirements, and untested behavior. Tag the reviewed commit and push the tag; the workflow adds the archives and `SHA256SUMS.txt` automatically. Releases stay previews until their backends have sufficient manual validation and the release policy is deliberately changed.
+Before tagging, update the version in `CMakeLists.txt`, `native/common/filter.hpp`, `Resources/Info.plist`, and the CLI version check in `.github/workflows/ci.yml`. Add `docs/releases/vX.Y.Z.md` with accurate notes, download requirements, and untested behavior. Tag the reviewed commit and push the tag; the workflow adds the archives and `SHA256SUMS.txt` automatically. Releases are published as regular GitHub releases so they appear in the repository sidebar and `/releases/latest`. The Latest label identifies the current download; it does not replace backend validation. Keep unverified backends explicitly labeled as previews in the release notes and compatibility table.
 
 The local build scripts do not replace a running installation. Do not change an installed copy or its permissions as part of a build/test.

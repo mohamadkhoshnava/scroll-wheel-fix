@@ -1,5 +1,9 @@
 # Scroll Wheel Fix — رفع پرش اسکرول ماوس
 
+[![Scroll Wheel Fix — فیلتر پرش اسکرول ماوس در مک، ویندوز و لینوکس](assets/scroll-wheel-fix-banner.png)](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/latest)
+
+**[مشاهدهٔ آخرین Release و دانلود نسخهٔ مک، ویندوز و لینوکس](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/latest)**
+
 ابزار متن‌باز برای کاهش **پرش اسکرول به جهت مخالف، بالا رفتن ناگهانی هنگام اسکرول به پایین و لرزش چرخ ماوس** در مک، ویندوز و لینوکس.
 
 [دانلود نسخهٔ پیش‌نمایش ۰٫۲٫۰](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/tag/v0.2.0) · [English](README.md) · [مجوز MIT](LICENSE)
@@ -12,9 +16,9 @@
 
 | سیستم | فایل | رابط و دسترسی | وضعیت بررسی |
 | --- | --- | --- | --- |
-| macOS 13+ | `Scroll-Wheel-Fix-macOS-universal.zip` | برنامهٔ منوی بالا؛ Intel و Apple Silicon؛ مجوز Accessibility | تست و بیلد خودکار؛ نسخهٔ اولیه روی یک مک با M220 استفاده شده |
-| Windows 10/11 x64 | `Scroll-Wheel-Fix-Windows-x64.zip` | برنامهٔ قابل حمل کنار ساعت؛ نشست عادی کاربر | بیلد و تست خودکار؛ تست واقعی ماوس هنوز لازم است |
-| Linux x64 | `Scroll-Wheel-Fix-Linux-x64.tar.gz` | خط فرمان؛ انتخاب یک ماوس با evdev/uinput؛ معمولاً sudo | بیلد، تست منطق و فریم اسکرول؛ تست سخت‌افزار و compositor هنوز لازم است |
+| macOS 13+ | [Scroll-Wheel-Fix-macOS-universal.zip](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/download/v0.2.0/Scroll-Wheel-Fix-macOS-universal.zip) | برنامهٔ منوی بالا؛ Intel و Apple Silicon؛ مجوز Accessibility | تست و بیلد خودکار؛ نسخهٔ اولیه روی یک مک با M220 استفاده شده |
+| Windows 10/11 x64 | [Scroll-Wheel-Fix-Windows-x64.zip](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/download/v0.2.0/Scroll-Wheel-Fix-Windows-x64.zip) | برنامهٔ قابل حمل کنار ساعت؛ نشست عادی کاربر | بیلد و تست خودکار؛ تست واقعی ماوس هنوز لازم است |
+| Linux x64 | [Scroll-Wheel-Fix-Linux-x64.tar.gz](https://github.com/mohamadkhoshnava/scroll-wheel-fix/releases/download/v0.2.0/Scroll-Wheel-Fix-Linux-x64.tar.gz) | خط فرمان؛ انتخاب یک ماوس با evdev/uinput؛ معمولاً sudo | بیلد، تست منطق و فریم اسکرول؛ تست سخت‌افزار و compositor هنوز لازم است |
 
 نسخهٔ مشترک سه سیستم **پیش‌نمایش** است. فایل‌های برنامه و `SHA256SUMS.txt` در صفحهٔ دانلود هستند. بیلد لینوکس روی Ubuntu 24.04 انجام می‌شود و به `libevdev.so.2` و runtime سازگار نیاز دارد؛ برای توزیع یا معماری دیگر از سورس بساز.
 
